@@ -82,11 +82,102 @@ async function run() {
 //   next();
 // }
 
-  // users 
+  
+   // Get all classes
     app.get('/class', async (req, res) => {
       const result = await classCollection.find().toArray();
       res.send(result);
     });
+
+   
+    
+
+    // Approve a class
+    app.patch('/class/:id/approve', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = { $set: { status: 'approved' } };
+
+      const result = await classCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+    // Deny a class
+    app.patch('/class/:id/deny', async (req, res) => {
+      const id = req.params.id;
+      const filter = { _id: new ObjectId(id) };
+      const updateDoc = { $set: { status: 'denied' } };
+
+      const result = await classCollection.updateOne(filter, updateDoc);
+      res.send(result);
+    });
+
+
+    // Send feedback for a specific class
+app.patch('/class/:id/feedback', async (req, res) => {
+  const classId = req.params.id;
+  const { feedback } = req.body;
+
+  // Update the class document with the feedback
+  const filter = { _id: new ObjectId(classId) };
+  const updateDoc = {
+    $set: { feedback }
+  };
+
+  const result = await classCollection.updateOne(filter, updateDoc);
+
+  res.send(result);
+});
+
+
+
+//student selected class
+// Student Dashboard: Get all selected classes for a student
+app.get('/students/:studentId/selected-classes', async (req, res) => {
+  
+    const studentId = req.params.studentId;
+
+    // Retrieve the student's selected classes from the database based on the studentId
+    const result = await classCollection.find({ studentId }).toArray();
+
+    res.send(result);
+  
+  
+});
+
+// Student Dashboard: Remove a selected class from a student
+app.delete('/students/:studentId/selected-classes/:classId', async (req, res) => {
+  
+    const studentId = req.params.studentId;
+    const classId = req.params.classId;
+
+    // Remove the class from the student's selected classes in the database
+   const result= await classCollection.deleteOne({ studentId, _id: new ObjectId(classId) });
+
+   res.send(result);
+  
+});
+
+
+// Student Dashboard: Add a class to a student's selected classes
+app.post('/students/:studentId/selected-classes', async (req, res) => {
+  
+    const studentId = req.params.studentId;
+    const classData = req.body;
+
+    // Add the studentId to the class data
+    classData.studentId = studentId;
+
+    // Insert the class into the selected classes collection
+    const result = await classCollection.insertOne(classData);
+
+    res.send(result);
+  
+});
+
+
+
+// all users 
     app.get('/users', async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
@@ -144,7 +235,7 @@ async function run() {
       const user = await usersCollection.findOne(query);
       const result = { instructor: user?.role === 'instructor' };
       res.send(result);
-      console.log(147,user);
+      
     });
 
     //instructor Update
@@ -164,6 +255,15 @@ async function run() {
     })
 
 
+    //instructor class 
+    app.get('/myclasses', verifyJWT, async (req, res) => {
+      const instructorEmail = req.decoded.email;
+    const classes = await classCollection.find({ instructorEmail }).toArray();
+    res.json(classes);
+      
+    });
+
+
     //class ad by instructor 
 
 
@@ -174,6 +274,8 @@ async function run() {
  const result = await classCollection.insertOne(classData);
     res.send(result);
     });
+
+
 
 
 
