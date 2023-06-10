@@ -83,7 +83,11 @@ async function run() {
 // }
 
   // users 
-    app.get('/users',verifyJWT, async (req, res) => {
+    app.get('/class', async (req, res) => {
+      const result = await classCollection.find().toArray();
+      res.send(result);
+    });
+    app.get('/users', async (req, res) => {
       const result = await usersCollection.find().toArray();
       res.send(result);
     });
@@ -134,12 +138,13 @@ async function run() {
 
     //instructor  check
   
-    app.get('/users/instructor/:email', verifyJWT, async (req, res) => {
+    app.get('/users/instructor/:email',  async (req, res) => {
       const email = req.params.email;
       const query = { email: email };
       const user = await usersCollection.findOne(query);
       const result = { instructor: user?.role === 'instructor' };
       res.send(result);
+      console.log(147,user);
     });
 
     //instructor Update
@@ -161,12 +166,9 @@ async function run() {
 
     //class ad by instructor 
 
-app.get('/classes', async (req, res) => {
-  const classes = await classCollection.find().toArray();
-  res.send(classes);
-});
 
-    app.post('/classes', async (req, res) => {
+
+    app.post('/addclass', async (req, res) => {
   const classData = req.body;
   classData.status = 'pending';
  const result = await classCollection.insertOne(classData);
