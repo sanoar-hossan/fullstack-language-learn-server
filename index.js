@@ -83,9 +83,18 @@ async function run() {
 // }
 
   
-   // Get all classes
+   //Get all classes
     app.get('/class', async (req, res) => {
       const result = await classCollection.find().toArray();
+      
+      res.send(result);
+    });
+
+    //approve classs
+    app.get('/approveclass', async (req, res) => {
+      const result = await classCollection.find({status:
+        "approved"}).toArray();
+      
       res.send(result);
     });
 
