@@ -47,8 +47,10 @@ async function run() {
 
 //all collection
  const classCollection = client.db("languageclassDb").collection("class");
+ const selectedclassCollection = client.db("languageclassDb").collection("selectedclass");
  const instructorCollection = client.db("languageclassDb").collection("instructor");
  const usersCollection = client.db("languageclassDb").collection("users");
+
 
 
 
@@ -98,6 +100,14 @@ async function run() {
       res.send(result);
     });
 
+
+    app.get('/instrucor', async (req, res) => {
+      const result = await classCollection.find({role:
+        "approved"}).toArray();
+      
+      res.send(result);
+    });
+
    
     
 
@@ -142,47 +152,62 @@ app.patch('/class/:id/feedback', async (req, res) => {
 
 //student selected class
 // Student Dashboard: Get all selected classes for a student
-app.get('/students/:studentId/selected-classes', async (req, res) => {
-  
-    const studentId = req.params.studentId;
+    app.get('/students/:studentId/selected-classes', verifyJWT, async (req, res) => {
+      const studentId = req.params.studentId;
 
-    // Retrieve the student's selected classes from the database based on the studentId
-    const result = await classCollection.find({ studentId }).toArray();
+      const user = await usersCollection.findOne({ _id: new ObjectId(studentId) });
+      if (!user) {
+        return res.status(404).send({ error: true, message: 'User not found' });
+      }
 
+      res.send(user.selectedClasses);
+    });
+
+    // Student Dashboard: Select a class for a student
+    // Student Dashboard: Select a class for a student
+app.get('/selectedclass/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+
+  const result = await selectedclassCollection.find(query).toArray();
+  res.send(result);
+});
+
+app.post('/selectedclass/:email', async (req, res) => {
+  const user = req.body;
+  const query = { email: user.email };
+  const result = await selectedclassCollection.insertOne(query);
+  res.send(result);
+});
+
+
+//select class
+  // cart collection apis
+  app.get('/classes', verifyJWT, async (req, res) => {
+    const email = req.query.email;
+
+    if (!email) {
+      res.send([]);
+    }
+
+    const decodedEmail = req.decoded.email;
+    if (email !== decodedEmail) {
+      return res.status(403).send({ error: true, message: 'forbidden access' })
+    }
+
+    const query = { email: email };
+    const result = await selectedclassCollection.find(query).toArray();
     res.send(result);
-  
-  
-});
+  });
 
-// Student Dashboard: Remove a selected class from a student
-app.delete('/students/:studentId/selected-classes/:classId', async (req, res) => {
-  
-    const studentId = req.params.studentId;
-    const classId = req.params.classId;
-
-    // Remove the class from the student's selected classes in the database
-   const result= await classCollection.deleteOne({ studentId, _id: new ObjectId(classId) });
-
-   res.send(result);
-  
-});
-
-
-// Student Dashboard: Add a class to a student's selected classes
-app.post('/students/:studentId/selected-classes', async (req, res) => {
-  
-    const studentId = req.params.studentId;
-    const classData = req.body;
-
-    // Add the studentId to the class data
-    classData.studentId = studentId;
-
-    // Insert the class into the selected classes collection
-    const result = await classCollection.insertOne(classData);
-
+  app.post('/classes', async (req, res) => {
+    const item = req.body;
+    const result = await selectedclassCollection.insertOne(item);
     res.send(result);
-  
-});
+  })
+
+
+
 
 
 
