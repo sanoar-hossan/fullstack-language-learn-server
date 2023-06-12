@@ -48,6 +48,8 @@ async function run() {
 //all collection
  const classCollection = client.db("languageclassDb").collection("class");
  const selectedclassCollection = client.db("languageclassDb").collection("selectedclass");
+ const enrolledclassCollection = client.db("languageclassDb").collection("enrolledclass");
+ const paymentCollection = client.db("languageclassDb").collection("payment");
  const instructorCollection = client.db("languageclassDb").collection("instructor");
  const usersCollection = client.db("languageclassDb").collection("users");
 
@@ -152,8 +154,6 @@ app.patch('/class/:id/feedback', async (req, res) => {
 
 //student selected class
 
-
-    // Student Dashboard: Select a class for a student
     // Student Dashboard: Select a class for a student
 app.get('/selectedclass/:email', async (req, res) => {
   const email = req.params.email;
@@ -173,6 +173,70 @@ app.post('/selectedclass/:email', async (req, res) => {
   const result = await selectedclassCollection.insertOne(data);
   res.send(result);
 });
+
+app.delete("/selectedclass/:email/:id", async (req, res) => {
+  const email = req.params.email;
+  const classId = req.params.id;
+
+  const query = { email: email, _id: classId };
+
+  const result = await selectedclassCollection.deleteOne(query);
+  res.send(result);
+});
+// Student Dashboard: Pay for a selected class
+app.post('/payment/:classId', async (req, res) => {
+  const classId = req.params.classId;
+    
+ const result= await classCollection.updateOne({ _id: classId }, { $inc: { availableSeats: -1 } });
+req.send(result);
+})
+
+// Student Dashboard: Get payment history
+app.get('/payment/history/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+  
+  const paymentHistory = await paymentCollection.find(query).sort({ createdAt: -1 }).toArray();
+  res.send(paymentHistory);
+});
+
+// Student Dashboard: Save payment history
+app.post('/payment/history', async (req, res) => {
+ 
+    const paymentData = req.body;
+    
+    const result = await paymentCollection.insertOne(paymentData);
+    res.send(result);
+  })
+
+  // Student Dashboard: Get enrolled classes
+app.get('/enrolledclasses/:email', async (req, res) => {
+  const email = req.params.email;
+  const query = { email: email };
+
+  const enrolledClasses = await enrolledclassCollection.find(query).toArray();
+  res.send(enrolledClasses);
+});
+
+// Student Dashboard: Add enrolled class
+app.post('/enrolledclasses', async (req, res) => {
+  const { email, classId, className, instructorName, price } = req.body;
+
+  // Perform any necessary validation or checks before adding the enrolled class
+
+  const enrolledClass = {
+    email,
+    classId,
+    className,
+    instructorName,
+    price,
+    paymentDate: new Date(),
+  };
+
+  const result = await enrolledclassCollection.insertOne(enrolledClass);
+  res.send(result);
+});
+
 
 
 //select class
