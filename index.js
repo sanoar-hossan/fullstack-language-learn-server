@@ -43,7 +43,7 @@ const client = new MongoClient(uri, {
 async function run() {
   try {
     // Connect the client to the server	(optional starting in v4.7)
-    await client.connect();
+   
 
 //all collection
  const classCollection = client.db("languageclassDb").collection("class");
@@ -90,6 +90,11 @@ async function run() {
    //Get all classes
     app.get('/class', async (req, res) => {
       const result = await classCollection.find().toArray();
+      
+      res.send(result);
+    });
+    app.get('/instructor', async (req, res) => {
+      const result = await usersCollection.find({role:"instructor"}).toArray();
       
       res.send(result);
     });
