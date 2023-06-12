@@ -151,17 +151,7 @@ app.patch('/class/:id/feedback', async (req, res) => {
 
 
 //student selected class
-// Student Dashboard: Get all selected classes for a student
-    app.get('/students/:studentId/selected-classes', verifyJWT, async (req, res) => {
-      const studentId = req.params.studentId;
 
-      const user = await usersCollection.findOne({ _id: new ObjectId(studentId) });
-      if (!user) {
-        return res.status(404).send({ error: true, message: 'User not found' });
-      }
-
-      res.send(user.selectedClasses);
-    });
 
     // Student Dashboard: Select a class for a student
     // Student Dashboard: Select a class for a student
@@ -174,9 +164,13 @@ app.get('/selectedclass/:email', async (req, res) => {
 });
 
 app.post('/selectedclass/:email', async (req, res) => {
-  const user = req.body;
-  const query = { email: user.email };
-  const result = await selectedclassCollection.insertOne(query);
+  const {image,instructorName,instructorEmail,availableSeats,price,status} = req.body;
+  //console.log(user);
+  // const query = { email: user.email };
+  // 
+  const data = {image,instructorName,instructorEmail,availableSeats,price,status,email:req.params.email}
+  console.log(data);
+  const result = await selectedclassCollection.insertOne(data);
   res.send(result);
 });
 
