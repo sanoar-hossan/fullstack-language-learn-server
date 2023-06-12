@@ -174,17 +174,18 @@ app.post('/selectedclass/:email', async (req, res) => {
   res.send(result);
 });
 
-app.delete("/selectedclass/:email/:id", async (req, res) => {
+app.delete("/selectedclass/:email", async (req, res) => {
+  console.log("id ");
   const email = req.params.email;
-  const classId = req.params.id;
+ 
 
-  const query = { email: email, _id: classId };
+  const query = { email: email, };
 
   const result = await selectedclassCollection.deleteOne(query);
   res.send(result);
 });
 // Student Dashboard: Pay for a selected class
-app.post('/payment/:classId', async (req, res) => {
+app.post('/payment/:id', async (req, res) => {
   const classId = req.params.classId;
     
  const result= await classCollection.updateOne({ _id: classId }, { $inc: { availableSeats: -1 } });
