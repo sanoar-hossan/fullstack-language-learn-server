@@ -275,10 +275,7 @@ app.get('/enrolledclasses/:email', async (req, res) => {
 // Student Dashboard: Add enrolled class
 app.post('/enrolledclasses/:email', async (req, res) => {
   const { email, classId, className, instructorName, price } = req.body;
-  //find operation
-  // const find = await enrolledClassCollection
-  // .find(classid==)
-  // .toArray();
+  ;
  console.log(req.body);
 
   const enrolledClass = {
