@@ -2,6 +2,7 @@ const express = require('express');
 const app=express();
 const cors = require('cors');
 require('dotenv').config()
+const stripe=require('stripe')(process.env.ACCESS_SECRET)
 const jwt = require('jsonwebtoken');
 const port = process.env.PORT || 5000;
 //middleware
@@ -93,6 +94,20 @@ async function run() {
       
       res.send(result);
     });
+
+
+    //popular class 
+    app.get('/popularclasses', async (req, res) => {
+      const result = await classCollection.find({ status: "approved" })
+        .sort({ availableSeats: -1 })
+        .limit(6)
+        .toArray();
+    
+      res.send(result);
+    });
+    
+
+
     app.get('/instructor', async (req, res) => {
       const result = await usersCollection.find({role:"instructor"}).toArray();
       
@@ -189,6 +204,8 @@ app.delete("/selectedclass/:email", async (req, res) => {
   const result = await selectedclassCollection.deleteOne(query);
   res.send(result);
 });
+
+
 // Student Dashboard: Pay for a selected class
 app.post('/payment/:id', async (req, res) => {
   const classId = req.params.classId;
@@ -197,14 +214,43 @@ app.post('/payment/:id', async (req, res) => {
 req.send(result);
 })
 
+//payment api
+app.post('/payment', async (req, res) => {
+  const payment = req.body;
+  console.log(req.body);
+
+  const deleteResult = await selectedclassCollection.deleteOne({ _id: new ObjectId(classId) });
+
+  const insertResult = await paymentCollection.insertOne(payment);
+
+  res.send({ deleteResult, insertResult });
+});
+
+
+// create payment intent
+    app.post('/create-payment-intent', verifyJWT, async (req, res) => {
+      const { price } = req.body;
+      const amount = parseInt(price * 100);
+      const paymentIntent = await stripe.paymentIntents.create({
+        amount: amount,
+        currency: 'usd',
+        payment_method_types: ['card']
+      });
+
+      res.send({
+        clientSecret: paymentIntent.client_secret
+      })
+    })
+
 // Student Dashboard: Get payment history
-app.get('/payment/history/:email', async (req, res) => {
+app.get('/payment-history/:email', async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
-  
-  const paymentHistory = await paymentCollection.find(query).sort({ createdAt: -1 }).toArray();
-  res.send(paymentHistory);
+
+  const result = await paymentCollection.find(query).sort({ date: -1 }).toArray();
+  res.send(result);
 });
+
 
 // Student Dashboard: Save payment history
 app.post('/payment/history', async (req, res) => {
@@ -219,16 +265,21 @@ app.post('/payment/history', async (req, res) => {
 app.get('/enrolledclasses/:email', async (req, res) => {
   const email = req.params.email;
   const query = { email: email };
+  
 
   const enrolledClasses = await enrolledclassCollection.find(query).toArray();
+  console.log(enrolledClasses);
   res.send(enrolledClasses);
 });
 
 // Student Dashboard: Add enrolled class
-app.post('/enrolledclasses', async (req, res) => {
+app.post('/enrolledclasses/:email', async (req, res) => {
   const { email, classId, className, instructorName, price } = req.body;
-
-  // Perform any necessary validation or checks before adding the enrolled class
+  //find operation
+  // const find = await enrolledClassCollection
+  // .find(classid==)
+  // .toArray();
+ console.log(req.body);
 
   const enrolledClass = {
     email,
@@ -242,6 +293,11 @@ app.post('/enrolledclasses', async (req, res) => {
   const result = await enrolledclassCollection.insertOne(enrolledClass);
   res.send(result);
 });
+
+
+
+
+
 
 
 
